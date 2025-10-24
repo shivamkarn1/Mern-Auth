@@ -15,7 +15,6 @@ app.get("/health", (req, res) => {
   });
 });
 
-// read PORT from environment (allow string->number) with fallback
 const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
 
 app.listen(PORT, () => {
