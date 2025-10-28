@@ -10,9 +10,8 @@ app.get("/", (req, res) => {
     status: "Healthy ",
   });
 });
-app.get("/health", (req, res) => {
+app.get("/health", (_, res) => {
   return res.status(200).json({
-    message: "Server is running Great ;)",
     status: "Healthy ",
   });
 });
