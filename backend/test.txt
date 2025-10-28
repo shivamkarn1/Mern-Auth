@@ -1,1 +1,0 @@
-mongodb+srv://evilsniper64_db_user:ELcAQ0KhOr8I63qX@mern-auth.gsd7zzj.mongodb.net/?appName=mern-auth

@@ -5,3 +5,5 @@ const authRoute = Router();
 // the prefix is : /auth
 
 authRoute.post("/register", registerHandler);
+
+export default authRoute;
