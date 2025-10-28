@@ -5,8 +5,8 @@ import cors from "cors";
 import { CLIENT_URL } from "../src/constants/env";
 import cookieParser from "cookie-parser";
 import { errorHandler } from "../src/middleware/errorHandler";
-import catchErrors from "./utils/catchErrors";
 import { OK } from "./constants/http";
+
 const app = express();
 
 //middlewares
@@ -32,6 +32,10 @@ app.get("/health", (_, res: Response) => {
     status: "Healthy ",
   });
 });
+
+// Auth routes
+import authRoute from "./routes/auth.route";
+app.use("/auth", authRoute);
 
 app.use(errorHandler);
 
