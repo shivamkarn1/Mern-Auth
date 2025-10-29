@@ -1,6 +1,7 @@
 import { ZodError } from "zod";
 import { ErrorRequestHandler, Response } from "express";
 import { BAD_REQUEST } from "../constants/http";
+import { AppError } from "../utils/AppError";
 
 const handleZodError = (res: Response, error: ZodError) => {
   const errors = error.issues.map((issue) => ({
@@ -13,11 +14,21 @@ const handleZodError = (res: Response, error: ZodError) => {
   });
 };
 
+const handleAppError = (res: Response, error: AppError) => {
+  return res.status(error.statusCode).json({
+    message: error.message,
+    errorCode: error.errorCode,
+  });
+};
+
 const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
   console.error(`[${req.method}] ${req.path}`, err);
 
   if (err instanceof ZodError) {
     return handleZodError(res, err);
+  }
+  if (err instanceof AppError) {
+    return handleAppError(res, err);
   }
   const status = (err as any)?.statusCode ?? (err as any)?.status ?? 500;
   const message = (err as any)?.message ?? "Internal server error";
