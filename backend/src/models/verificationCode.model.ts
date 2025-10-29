@@ -8,17 +8,19 @@ export interface VerificationCodeDocument extends Document {
   createdAt: Date;
 }
 
-const verificationCodeSchema = new Schema({
-  userId: {
-    type: Schema.Types.ObjectId,
-    ref: "User",
-    required: true,
-    index: true,
+const verificationCodeSchema = new Schema(
+  {
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
+    type: { type: String, required: true },
+    expiresAt: { type: Date, required: true },
   },
-  type: { type: String, required: true },
-  createdAt: { type: Date, required: true },
-  expiresAt: { type: Date, required: true },
-});
+  { timestamps: true }
+);
 
 export const VerificationModel = model<VerificationCodeDocument>(
   "VerificationModel",
