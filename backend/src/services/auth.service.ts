@@ -7,7 +7,8 @@ import jwt from "jsonwebtoken";
 import { JWT_REFRESH_SECRET, JWT_SECRET } from "../constants/env";
 import appAssert from "../utils/appAssert";
 import { exist } from "joi";
-import { CONFLICT } from "../constants/http";
+import { CONFLICT, UNAUTHORIZED } from "../constants/http";
+import { signToken, refreshTokenSignOptions } from "../utils/jwt";
 
 export type createAccountParams = {
   email: string;
@@ -67,4 +68,46 @@ const createAccount = async (data: createAccountParams) => {
   };
 };
 
-export { createAccount };
+export type loginParams = {
+  email: string;
+  password: string;
+  userAgent?: string | undefined;
+};
+const loginUser = async ({ email, password, userAgent }: loginParams) => {
+  // get the user by email
+  const user = await User.findOne({ email });
+
+  // validate the password
+  appAssert(user, UNAUTHORIZED, "Invalid Email or Password ! ");
+
+  const isValid = await user.comparePassword(password);
+
+  appAssert(isValid, UNAUTHORIZED, "Invalid Email or Password");
+
+  // create a session
+  const userId = user._id;
+  const session = await SessionModal.create({
+    userId,
+    userAgent,
+  });
+  const sessionInfo = {
+    sessionId: session._id,
+  };
+
+  // sign access token and refresh token
+  const refreshToken = signToken(sessionInfo, refreshTokenSignOptions);
+
+  const accessToken = signToken({
+    ...sessionInfo,
+    userId: user._id,
+  });
+
+  // return user & tokens
+  return {
+    user: user.omitPassword(),
+    accessToken,
+    refreshToken,
+  };
+};
+
+export { createAccount, loginUser };
