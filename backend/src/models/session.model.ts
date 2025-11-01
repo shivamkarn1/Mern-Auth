@@ -6,7 +6,6 @@ export interface SessionDocument extends Document {
   createdAt: Date;
   expiresAt: Date | undefined;
 }
-
 const sessionSchema = new Schema({
   userId: {
     type: Schema.Types.ObjectId,
@@ -27,4 +26,7 @@ const sessionSchema = new Schema({
   },
 });
 
-export const SessionModal = model("SessionModal", sessionSchema);
+export const SessionModal = model<SessionDocument>(
+  "SessionModal",
+  sessionSchema
+);
