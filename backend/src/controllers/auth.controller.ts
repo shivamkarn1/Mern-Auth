@@ -1,14 +1,21 @@
 import { Request, Response, NextFunction } from "express";
 import catchErrors from "../utils/catchErrors";
-import { createAccount } from "../services/auth.service";
-import { BAD_REQUEST, CREATED, OK } from "../constants/http";
-import { setAuthCookies } from "../utils/setAuthCookies";
+import {
+  createAccount,
+  refresehUserAccessToken,
+} from "../services/auth.service";
+import { BAD_REQUEST, CREATED, OK, UNAUTHORIZED } from "../constants/http";
+import {
+  getRefreshTokenCookieOptions,
+  setAuthCookies,
+} from "../utils/setAuthCookies";
 import { loginSchema, registerSchema } from "./auth.schemas";
 import { loginUser } from "../services/auth.service";
 import { verifyToken, AccessTokenPayload } from "../utils/jwt";
 import { SessionModal } from "../models/session.model";
 import { clearAuthCookies } from "../utils/setAuthCookies";
-
+import appAssert from "../utils/appAssert";
+import { getAccessTokenCookieOptions } from "../utils/setAuthCookies";
 const registerHandler = catchErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     // validate request
@@ -76,4 +83,22 @@ const logoutHandler = catchErrors(async (req: Request, res: Response) => {
   return res.status(OK).json({ message: "Logout SuccessFull" });
 });
 
-export { registerHandler, loginHandler, logoutHandler };
+const refreshHandler = catchErrors(async (req, res) => {
+  const refreshToken = req.cookies.refreshToken as string | undefined;
+
+  appAssert(refreshToken, UNAUTHORIZED, "Missing Refresh Token");
+
+  const { accessToken, newRefreshToken } = await refresehUserAccessToken(
+    refreshToken
+  );
+
+  if (refreshToken) {
+    res.cookie("refreshToken", newRefreshToken, getRefreshTokenCookieOptions());
+  }
+  return res
+    .status(OK)
+    .cookie("accessToken", accessToken, getAccessTokenCookieOptions())
+    .json({ message: "Access Token Refreshed" });
+});
+
+export { registerHandler, loginHandler, logoutHandler, refreshHandler };
