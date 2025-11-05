@@ -1,14 +1,13 @@
 import VerificationCodeType from "../constants/verificationCodeType";
 import { User } from "../models/user.model";
-import { oneYearFromNow } from "../utils/date";
+import { oneYearFromNow, ONE_DAY_MS, thirtyDaysFromNow } from "../utils/date";
 import { VerificationModel } from "../models/verificationCode.model";
 import { SessionModal } from "../models/session.model";
 import jwt from "jsonwebtoken";
 import { JWT_REFRESH_SECRET, JWT_SECRET } from "../constants/env";
 import appAssert from "../utils/appAssert";
-import { exist } from "joi";
 import { CONFLICT, UNAUTHORIZED } from "../constants/http";
-import { signToken, refreshTokenSignOptions } from "../utils/jwt";
+import { signToken, refreshTokenSignOptions, verifyToken } from "../utils/jwt";
 
 export type createAccountParams = {
   email: string;
@@ -110,4 +109,46 @@ const loginUser = async ({ email, password, userAgent }: loginParams) => {
   };
 };
 
-export { createAccount, loginUser };
+const refresehUserAccessToken = async (refreshToken: string) => {
+  const result = verifyToken(refreshToken, {
+    secret: refreshTokenSignOptions.secret,
+  }) as RefreshTokenPayload | { payload: RefreshTokenPayload };
+  const payload = "payload" in result ? result.payload : result;
+  appAssert(payload, UNAUTHORIZED, "Invalid refresh Token");
+
+  const session = await SessionModal.findById(payload.sessionId);
+  const now = Date.now();
+  appAssert(
+    session && session.expiresAt.getTime() > now,
+    UNAUTHORIZED,
+    "Sessoin Expired"
+  );
+  const sessionNeedsRefresh = session.expiresAt.getTime() - now <= ONE_DAY_MS;
+
+  if (sessionNeedsRefresh) {
+    session.expiresAt = thirtyDaysFromNow();
+    await session.save();
+  }
+
+  const newRefreshToken = sessionNeedsRefresh
+    ? signToken(
+        {
+          sessionId: session._id,
+        },
+        refreshTokenSignOptions
+      )
+    : undefined;
+  const accessToken = signToken({
+    userId: session.userId,
+    sessionId: session._id,
+  });
+
+  return {
+    accessToken,
+    newRefreshToken,
+  };
+};
+
+type RefreshTokenPayload = { sessionId: string };
+
+export { createAccount, loginUser, refresehUserAccessToken };
