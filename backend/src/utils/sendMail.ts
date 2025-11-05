@@ -1,4 +1,5 @@
 import resend from "../config/resend";
+import { EMAIL_SENDER, NODE_ENV } from "../constants/env";
 
 type Params = {
   to: string;
@@ -7,17 +8,23 @@ type Params = {
   html: string;
 };
 
+const getToEmail = (to: string) =>
+  NODE_ENV === "development" ? "delivered@resend.dev" : to;
+
 const sendMail = async ({ to, subject, text, html }: Params) => {
-  const { data, error } = await resend.emails.send({
-    from: "onboarding@resend.dev",
-    to: "delivered@resend.dev",
-    subject,
-    html,
-  });
-  if (error) {
-    return console.error({ error });
+  try {
+    const data = await resend.emails.send({
+      from: "ShivamKarn <onboarding@resend.dev>",
+      to: getToEmail(to),
+      subject,
+      html,
+    });
+    console.log({ data });
+    return data;
+  } catch (error) {
+    console.error("Failed to send email: ", error);
+    throw error;
   }
-  console.log({ data });
 };
 
 export { sendMail };
