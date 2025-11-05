@@ -3,6 +3,7 @@ import catchErrors from "../utils/catchErrors";
 import {
   createAccount,
   refresehUserAccessToken,
+  verifyEmail,
 } from "../services/auth.service";
 import { BAD_REQUEST, CREATED, OK, UNAUTHORIZED } from "../constants/http";
 import {
@@ -16,6 +17,8 @@ import { SessionModal } from "../models/session.model";
 import { clearAuthCookies } from "../utils/setAuthCookies";
 import appAssert from "../utils/appAssert";
 import { getAccessTokenCookieOptions } from "../utils/setAuthCookies";
+import { verificationCodeSchema } from "./auth.schemas";
+
 const registerHandler = catchErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     // validate request
@@ -101,4 +104,20 @@ const refreshHandler = catchErrors(async (req, res) => {
     .json({ message: "Access Token Refreshed" });
 });
 
-export { registerHandler, loginHandler, logoutHandler, refreshHandler };
+const verifyEmailHandler = catchErrors(async (req, res) => {
+  const verificationCode = verificationCodeSchema.parse(req.params.code);
+
+  // use the verifyemail service
+
+  await verifyEmail(verificationCode);
+
+  return res.status(OK).json({ message: "Email was Verified Successfully" });
+});
+
+export {
+  registerHandler,
+  loginHandler,
+  logoutHandler,
+  refreshHandler,
+  verifyEmailHandler,
+};
