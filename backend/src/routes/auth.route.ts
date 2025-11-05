@@ -3,6 +3,7 @@ import {
   registerHandler,
   loginHandler,
   logoutHandler,
+  refreshHandler,
 } from "../controllers/auth.controller";
 const authRoute = Router();
 
@@ -10,6 +11,7 @@ const authRoute = Router();
 
 authRoute.post("/register", registerHandler);
 authRoute.post("/login", loginHandler);
+authRoute.get("/refresh", refreshHandler);
 authRoute.post("/logout", logoutHandler);
 
 export default authRoute;
