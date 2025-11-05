@@ -4,7 +4,7 @@ import { oneYearFromNow, ONE_DAY_MS, thirtyDaysFromNow } from "../utils/date";
 import { VerificationModel } from "../models/verificationCode.model";
 import { SessionModal } from "../models/session.model";
 import jwt from "jsonwebtoken";
-import { JWT_REFRESH_SECRET, JWT_SECRET } from "../constants/env";
+import { JWT_REFRESH_SECRET, JWT_SECRET, CLIENT_URL } from "../constants/env";
 import appAssert from "../utils/appAssert";
 import {
   CONFLICT,
@@ -12,6 +12,11 @@ import {
   UNAUTHORIZED,
 } from "../constants/http";
 import { signToken, refreshTokenSignOptions, verifyToken } from "../utils/jwt";
+import { sendMail } from "../utils/sendMail";
+import {
+  getVerifyEmailTemplate,
+  passwordResetTemplate,
+} from "../utils/emailTemplates";
 
 export type createAccountParams = {
   email: string;
@@ -42,8 +47,18 @@ const createAccount = async (data: createAccountParams) => {
     type: VerificationCodeType.EmailVerification,
     expiresAt: oneYearFromNow(),
   });
-  // send verification email -> will add RESEND EMAIL integration later
 
+  const url = `${CLIENT_URL}/email/verify/${verificationCode._id}`;
+
+  // send verification email -> will add RESEND EMAIL integration later
+  try {
+    await sendMail({
+      to: user.email,
+      ...getVerifyEmailTemplate(url),
+    });
+  } catch (err) {
+    console.error("Failed to send verification email:", err);
+  }
   // create session
   const session = await SessionModal.create({
     userId: user._id,
