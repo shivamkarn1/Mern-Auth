@@ -6,7 +6,11 @@ import { SessionModal } from "../models/session.model";
 import jwt from "jsonwebtoken";
 import { JWT_REFRESH_SECRET, JWT_SECRET } from "../constants/env";
 import appAssert from "../utils/appAssert";
-import { CONFLICT, UNAUTHORIZED } from "../constants/http";
+import {
+  CONFLICT,
+  INTERNAL_SERVER_ERROR,
+  UNAUTHORIZED,
+} from "../constants/http";
 import { signToken, refreshTokenSignOptions, verifyToken } from "../utils/jwt";
 
 export type createAccountParams = {
@@ -151,4 +155,32 @@ const refresehUserAccessToken = async (refreshToken: string) => {
 
 type RefreshTokenPayload = { sessionId: string };
 
-export { createAccount, loginUser, refresehUserAccessToken };
+const verifyEmail = async (code: string) => {
+  // get the verification code
+  const validCode = await VerificationModel.findOne({
+    _id: code,
+    type: VerificationCodeType.EmailVerification,
+    expiresAt: { $gt: new Date() },
+  });
+
+  // update user to verified true
+  const updatedUser = await User.findByIdAndUpdate(
+    validCode?.userId,
+    {
+      verified: true,
+    },
+    { new: true }
+  );
+
+  appAssert(updatedUser, INTERNAL_SERVER_ERROR, "Failed to verify Email");
+
+  // delete verification code
+  await validCode?.deleteOne();
+
+  // return user
+  return {
+    user: updatedUser.omitPassword(),
+  };
+};
+
+export { createAccount, loginUser, refresehUserAccessToken, verifyEmail };
