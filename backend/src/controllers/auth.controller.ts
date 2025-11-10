@@ -5,13 +5,19 @@ import {
   refresehUserAccessToken,
   verifyEmail,
   sendPasswordResetEmail,
+  resetPassword,
 } from "../services/auth.service";
 import { BAD_REQUEST, CREATED, OK, UNAUTHORIZED } from "../constants/http";
 import {
   getRefreshTokenCookieOptions,
   setAuthCookies,
 } from "../utils/setAuthCookies";
-import { emailSchema, loginSchema, registerSchema } from "./auth.schemas";
+import {
+  emailSchema,
+  loginSchema,
+  registerSchema,
+  resetPasswordSchema,
+} from "./auth.schemas";
 import { loginUser } from "../services/auth.service";
 import { verifyToken, AccessTokenPayload } from "../utils/jwt";
 import { SessionModal } from "../models/session.model";
@@ -20,6 +26,7 @@ import appAssert from "../utils/appAssert";
 import { getAccessTokenCookieOptions } from "../utils/setAuthCookies";
 import { verificationCodeSchema } from "./auth.schemas";
 import { send } from "process";
+import { clear } from "console";
 
 const registerHandler = catchErrors(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -127,6 +134,17 @@ const sendPasswordResetHandler = catchErrors(async (req, res) => {
     .json({ message: "Password reset email sent successfully" });
 });
 
+const resetPasswordHandler = catchErrors(async (req, res) => {
+  // Implementation for resetting the password goes here
+  const request = resetPasswordSchema.parse(req.body);
+
+  await resetPassword(request);
+
+  return clearAuthCookies(res)
+    .status(OK)
+    .json({ message: "Password reset successfully" });
+});
+
 export {
   registerHandler,
   loginHandler,
@@ -134,4 +152,5 @@ export {
   refreshHandler,
   verifyEmailHandler,
   sendPasswordResetHandler,
+  resetPasswordHandler,
 };
