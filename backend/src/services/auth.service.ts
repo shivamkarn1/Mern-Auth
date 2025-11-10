@@ -1,6 +1,12 @@
 import VerificationCodeType from "../constants/verificationCodeType";
 import { User } from "../models/user.model";
-import { oneYearFromNow, ONE_DAY_MS, thirtyDaysFromNow } from "../utils/date";
+import {
+  oneYearFromNow,
+  ONE_DAY_MS,
+  thirtyDaysFromNow,
+  fivMinAgo,
+  oneHourFromNow,
+} from "../utils/date";
 import { VerificationModel } from "../models/verificationCode.model";
 import { SessionModal } from "../models/session.model";
 import jwt from "jsonwebtoken";
@@ -10,6 +16,8 @@ import {
   CONFLICT,
   INTERNAL_SERVER_ERROR,
   UNAUTHORIZED,
+  NOT_FOUND,
+  TOO_MANY_REQUESTS,
 } from "../constants/http";
 import { signToken, refreshTokenSignOptions, verifyToken } from "../utils/jwt";
 import { sendMail } from "../utils/sendMail";
@@ -85,7 +93,6 @@ const createAccount = async (data: createAccountParams) => {
     refreshToken,
   };
 };
-
 export type loginParams = {
   email: string;
   password: string;
@@ -198,4 +205,67 @@ const verifyEmail = async (code: string) => {
   };
 };
 
-export { createAccount, loginUser, refresehUserAccessToken, verifyEmail };
+const sendPasswordResetEmail = async (email: string) => {
+  // email user by email
+  const user = await User.findOne({ email });
+  appAssert(user, NOT_FOUND, "User Not Found !");
+  // check email rate limit
+  const fiveMinAgo = fivMinAgo();
+
+  const count = await VerificationModel.countDocuments({
+    userId: user._id,
+    type: VerificationCodeType.PasswordReset,
+    createdAt: { $gt: fiveMinAgo },
+  });
+
+  // Allow up to 3 password reset requests within the last 5 minutes
+  appAssert(
+    count <= 3,
+    TOO_MANY_REQUESTS,
+    "Too many requests. Try again later."
+  );
+
+  // create verif code
+  const expiresAt = oneHourFromNow();
+  const verificationCode = await VerificationModel.create({
+    userId: user._id,
+    type: VerificationCodeType.PasswordReset,
+    expiresAt,
+  });
+  // send verf email
+  const url = `${CLIENT_URL}/password/reset?code=${
+    verificationCode._id
+  }&exp=${expiresAt.getTime()}`;
+
+  try {
+    const data = await sendMail({
+      to: user.email,
+      ...passwordResetTemplate(url),
+    });
+    // The Resend SDK may not always surface an `id` property in typings or responses.
+    // Instead assert that we received a response object from sendMail.
+    appAssert(
+      data != null &&
+        (data.raw !== undefined || (data as any).id !== undefined),
+      INTERNAL_SERVER_ERROR,
+      "Failed to send reset email"
+    );
+  } catch (err: any) {
+    console.error("Failed to send reset email:", err);
+    appAssert(
+      false,
+      INTERNAL_SERVER_ERROR,
+      `${err?.name || "Error"} - ${err?.message || String(err)}`
+    );
+  }
+};
+
+// return success response
+
+export {
+  createAccount,
+  loginUser,
+  refresehUserAccessToken,
+  verifyEmail,
+  sendPasswordResetEmail,
+};
