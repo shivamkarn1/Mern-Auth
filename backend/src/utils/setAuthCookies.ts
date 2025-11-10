@@ -33,8 +33,8 @@ export const setAuthCookies = ({ res, accessToken, refreshToken }: Params) => {
 };
 
 export const clearAuthCookies = (res: Response) => {
-  res.clearCookie("accessToken").clearCookie("refreshToken"),
-    {
-      path: REFRESH_PATH,
-    };
+  // return the response so callers can chain status/json
+  return res.clearCookie("accessToken").clearCookie("refreshToken", {
+    path: REFRESH_PATH,
+  });
 };
