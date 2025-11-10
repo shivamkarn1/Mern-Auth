@@ -20,4 +20,15 @@ const registerSchema = loginSchema
 
 const verificationCodeSchema = z.string().min(1).max(24);
 
-export { loginSchema, registerSchema, verificationCodeSchema, emailSchema };
+const resetPasswordSchema = z.object({
+  password: passwordSchema,
+  verificationCode: verificationCodeSchema,
+});
+
+export {
+  loginSchema,
+  registerSchema,
+  verificationCodeSchema,
+  emailSchema,
+  resetPasswordSchema,
+};
