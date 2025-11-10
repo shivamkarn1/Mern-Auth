@@ -18,6 +18,7 @@ import {
   UNAUTHORIZED,
   NOT_FOUND,
   TOO_MANY_REQUESTS,
+  BAD_REQUEST,
 } from "../constants/http";
 import { signToken, refreshTokenSignOptions, verifyToken } from "../utils/jwt";
 import { sendMail } from "../utils/sendMail";
@@ -25,6 +26,7 @@ import {
   getVerifyEmailTemplate,
   passwordResetTemplate,
 } from "../utils/emailTemplates";
+import { hashValue } from "../utils/bcrypt";
 
 export type createAccountParams = {
   email: string;
@@ -260,7 +262,44 @@ const sendPasswordResetEmail = async (email: string) => {
   }
 };
 
-// return success response
+type ResetPasswordParams = {
+  password: string;
+  verificationCode: string;
+};
+
+const resetPassword = async ({
+  password,
+  verificationCode,
+}: ResetPasswordParams) => {
+  // get the verf code
+  const validCode = await VerificationModel.findOne({
+    _id: verificationCode,
+    type: VerificationCodeType.PasswordReset,
+    expiresAt: { $gt: new Date() },
+  });
+
+  appAssert(validCode, BAD_REQUEST, "Invalid or Expired Verification Code");
+  // update users password
+  // hash the new password before updating
+  const hashedPassword = await hashValue(password);
+  const updatedUser = await User.findByIdAndUpdate(
+    validCode.userId,
+    { password: hashedPassword },
+    { new: true }
+  );
+  appAssert(updatedUser, INTERNAL_SERVER_ERROR, "Failed to reset password");
+
+  // Delete vef code
+  await validCode.deleteOne();
+
+  // delete all sessions
+  await SessionModal.deleteMany({ userId: validCode.userId });
+
+  // return response
+  return {
+    user: updatedUser.omitPassword(),
+  };
+};
 
 export {
   createAccount,
@@ -268,4 +307,5 @@ export {
   refresehUserAccessToken,
   verifyEmail,
   sendPasswordResetEmail,
+  resetPassword,
 };
