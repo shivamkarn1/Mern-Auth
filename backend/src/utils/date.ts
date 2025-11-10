@@ -11,4 +11,17 @@ const fifteenMinutesFromNow = () => {
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
-export { oneYearFromNow, thirtyDaysFromNow, fifteenMinutesFromNow, ONE_DAY_MS };
+const fivMinAgo = () => {
+  return new Date(Date.now() - 5 * 60 * 1000);
+};
+const oneHourFromNow = () => {
+  return new Date(Date.now() + 60 * 60 * 1000);
+};
+export {
+  oneYearFromNow,
+  thirtyDaysFromNow,
+  fifteenMinutesFromNow,
+  ONE_DAY_MS,
+  fivMinAgo,
+  oneHourFromNow,
+};
