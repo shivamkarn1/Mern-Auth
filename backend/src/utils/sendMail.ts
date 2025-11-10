@@ -11,16 +11,27 @@ type Params = {
 const getToEmail = (to: string) =>
   NODE_ENV === "development" ? "delivered@resend.dev" : to;
 
-const sendMail = async ({ to, subject, text, html }: Params) => {
+type SendMailResult = {
+  id?: string;
+  raw: any;
+};
+
+const sendMail = async ({
+  to,
+  subject,
+  text,
+  html,
+}: Params): Promise<SendMailResult> => {
   try {
     const data = await resend.emails.send({
       from: "ShivamKarn <onboarding@resend.dev>",
       to: getToEmail(to),
       subject,
       html,
+      ...(text ? { text } : {}),
     });
     console.log({ data });
-    return data;
+    return { id: (data as any)?.id, raw: data };
   } catch (error) {
     console.error("Failed to send email: ", error);
     throw error;
