@@ -25,8 +25,6 @@ import { clearAuthCookies } from "../utils/setAuthCookies";
 import appAssert from "../utils/appAssert";
 import { getAccessTokenCookieOptions } from "../utils/setAuthCookies";
 import { verificationCodeSchema } from "./auth.schemas";
-import { send } from "process";
-import { clear } from "console";
 
 const registerHandler = catchErrors(
   async (req: Request, res: Response, next: NextFunction) => {
