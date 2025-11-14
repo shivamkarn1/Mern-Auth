@@ -37,6 +37,11 @@ app.get("/health", (_, res: Response) => {
 import authRoute from "./routes/auth.route";
 app.use("/auth", authRoute);
 
+// User Routes -> protected routes
+import userRoute from "./routes/user.route";
+import { authenticate } from "./middleware/authenticate";
+app.use("/user", authenticate, userRoute);
+
 app.use(errorHandler);
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
