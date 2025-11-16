@@ -27,8 +27,6 @@ app.get("/", (req: Request, res: Response) => {
 });
 app.use(cookieParser());
 
-console.log("Helloo from NeoVim trying LazyGit !! ");
-
 app.get("/health", (_, res: Response) => {
   return res.status(OK).json({
     status: "Healthy ",
