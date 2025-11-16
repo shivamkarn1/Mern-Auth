@@ -15,7 +15,7 @@ app.use(
   cors({
     origin: CLIENT_URL,
     credentials: true,
-  })
+  }),
 );
 app.use(express.json({ limit: "16kb" }));
 
@@ -26,6 +26,8 @@ app.get("/", (req: Request, res: Response) => {
   });
 });
 app.use(cookieParser());
+
+console.log("Helloo from NeoVim trying LazyGit !! ");
 
 app.get("/health", (_, res: Response) => {
   return res.status(OK).json({

@@ -40,9 +40,8 @@ const registerHandler = catchErrors(
     return setAuthCookies({ res, accessToken, refreshToken })
       .status(CREATED)
       .json({ message: "User Registered Successfully", user });
-  }
+  },
 );
-
 const loginHandler = catchErrors(async (req: Request, res: Response) => {
   const request = loginSchema.parse({
     ...req.body,
@@ -98,9 +97,8 @@ const refreshHandler = catchErrors(async (req, res) => {
 
   appAssert(refreshToken, UNAUTHORIZED, "Missing Refresh Token");
 
-  const { accessToken, newRefreshToken } = await refresehUserAccessToken(
-    refreshToken
-  );
+  const { accessToken, newRefreshToken } =
+    await refresehUserAccessToken(refreshToken);
 
   if (refreshToken) {
     res.cookie("refreshToken", newRefreshToken, getRefreshTokenCookieOptions());
