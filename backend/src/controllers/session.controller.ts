@@ -1,7 +1,8 @@
-import { resourceLimits } from "worker_threads";
 import { SessionModal } from "../models/session.model";
 import catchErrors from "../utils/catchErrors";
-import { OK } from "../constants/http";
+import { NOT_FOUND, OK } from "../constants/http";
+import { z } from "zod";
+import appAssert from "../utils/appAssert";
 
 const getSessionHandler = catchErrors(async (req, res) => {
   const sessions = await SessionModal.find(
@@ -26,4 +27,18 @@ const getSessionHandler = catchErrors(async (req, res) => {
   });
 });
 
-export { getSessionHandler };
+const deleteSessionHandler = catchErrors(async (req, res) => {
+  const sessionId = z.string().parse(req.params.id);
+
+  const deleted = await SessionModal.findOneAndDelete({
+    _id: sessionId,
+    userId: req.userId,
+  });
+  appAssert(deleted, NOT_FOUND, " Session Not Found");
+
+  return res.status(OK).json({
+    message: "Session Removed",
+  });
+});
+
+export { getSessionHandler, deleteSessionHandler };
