@@ -8,8 +8,7 @@ type Params = {
   html: string;
 };
 
-const getToEmail = (to: string) =>
-  NODE_ENV === "development" ? "delivered@resend.dev" : to;
+const getToEmail = (to: string) => to;
 
 type SendMailResult = {
   id?: string;

@@ -6,6 +6,7 @@ import {
   verifyEmail,
   sendPasswordResetEmail,
   resetPassword,
+  resendVerificationEmail,
 } from "../services/auth.service";
 import { BAD_REQUEST, CREATED, OK, UNAUTHORIZED } from "../constants/http";
 import {
@@ -40,7 +41,7 @@ const registerHandler = catchErrors(
     return setAuthCookies({ res, accessToken, refreshToken })
       .status(CREATED)
       .json({ message: "User Registered Successfully", user });
-  },
+  }
 );
 const loginHandler = catchErrors(async (req: Request, res: Response) => {
   const request = loginSchema.parse({
@@ -97,8 +98,9 @@ const refreshHandler = catchErrors(async (req, res) => {
 
   appAssert(refreshToken, UNAUTHORIZED, "Missing Refresh Token");
 
-  const { accessToken, newRefreshToken } =
-    await refresehUserAccessToken(refreshToken);
+  const { accessToken, newRefreshToken } = await refresehUserAccessToken(
+    refreshToken
+  );
 
   if (refreshToken) {
     res.cookie("refreshToken", newRefreshToken, getRefreshTokenCookieOptions());
@@ -141,6 +143,11 @@ const resetPasswordHandler = catchErrors(async (req, res) => {
     .json({ message: "Password reset successfully" });
 });
 
+const resendVerificationEmailHandler = catchErrors(async (req, res) => {
+  const result = await resendVerificationEmail(req.userId as string);
+  return res.status(OK).json(result);
+});
+
 export {
   registerHandler,
   loginHandler,
@@ -149,4 +156,5 @@ export {
   verifyEmailHandler,
   sendPasswordResetHandler,
   resetPasswordHandler,
+  resendVerificationEmailHandler,
 };

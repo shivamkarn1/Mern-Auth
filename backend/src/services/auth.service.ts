@@ -187,19 +187,21 @@ const verifyEmail = async (code: string) => {
     expiresAt: { $gt: new Date() },
   });
 
+  appAssert(validCode, NOT_FOUND, "Invalid or expired verification code");
+
   // update user to verified true
   const updatedUser = await User.findByIdAndUpdate(
-    validCode?.userId,
+    validCode.userId,
     {
       verified: true,
     },
     { new: true }
   );
 
-  appAssert(updatedUser, INTERNAL_SERVER_ERROR, "Failed to verify Email");
+  appAssert(updatedUser, INTERNAL_SERVER_ERROR, "Failed to verify email");
 
   // delete verification code
-  await validCode?.deleteOne();
+  await validCode.deleteOne();
 
   // return user
   return {
@@ -301,6 +303,48 @@ const resetPassword = async ({
   };
 };
 
+const resendVerificationEmail = async (userId: string) => {
+  // get the user
+  const user = await User.findById(userId);
+  appAssert(user, NOT_FOUND, "User not found");
+
+  // check if user is already verified
+  appAssert(!user.verified, BAD_REQUEST, "Email is already verified");
+
+  // check for existing verification code
+  const existingCode = await VerificationModel.findOne({
+    userId: user._id,
+    type: VerificationCodeType.EmailVerification,
+  });
+
+  // if exists and not expired, use it; otherwise create new one
+  let verificationCode = existingCode;
+  if (!existingCode || existingCode.expiresAt < new Date()) {
+    // delete old code if expired
+    if (existingCode) {
+      await existingCode.deleteOne();
+    }
+    // create new verification code
+    verificationCode = await VerificationModel.create({
+      userId: user._id,
+      type: VerificationCodeType.EmailVerification,
+      expiresAt: oneYearFromNow(),
+    });
+  }
+
+  const url = `${CLIENT_URL}/email/verify/${verificationCode._id}`;
+
+  // send verification email
+  await sendMail({
+    to: user.email,
+    ...getVerifyEmailTemplate(url),
+  });
+
+  return {
+    message: "Verification email sent successfully",
+  };
+};
+
 export {
   createAccount,
   loginUser,
@@ -308,4 +352,5 @@ export {
   verifyEmail,
   sendPasswordResetEmail,
   resetPassword,
+  resendVerificationEmail,
 };

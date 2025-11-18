@@ -1,8 +1,9 @@
 import { SessionModal } from "../models/session.model";
 import catchErrors from "../utils/catchErrors";
-import { NOT_FOUND, OK } from "../constants/http";
+import { BAD_REQUEST, NOT_FOUND, OK } from "../constants/http";
 import { z } from "zod";
 import appAssert from "../utils/appAssert";
+import mongoose from "mongoose";
 
 const getSessionHandler = catchErrors(async (req, res) => {
   const sessions = await SessionModal.find(
@@ -30,11 +31,18 @@ const getSessionHandler = catchErrors(async (req, res) => {
 const deleteSessionHandler = catchErrors(async (req, res) => {
   const sessionId = z.string().parse(req.params.id);
 
+  // Validate that the sessionId is a valid MongoDB ObjectId
+  appAssert(
+    mongoose.Types.ObjectId.isValid(sessionId),
+    BAD_REQUEST,
+    "Invalid session ID format"
+  );
+
   const deleted = await SessionModal.findOneAndDelete({
     _id: sessionId,
     userId: req.userId,
   });
-  appAssert(deleted, NOT_FOUND, " Session Not Found");
+  appAssert(deleted, NOT_FOUND, "Session not found");
 
   return res.status(OK).json({
     message: "Session Removed",
